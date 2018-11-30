@@ -42,6 +42,10 @@
 #include <CGAL/AABB_triangle_primitive.h>
 #include <CGAL/Polyhedron_3.h>
 
+#if defined(__arm__) || defined(__ARMEL__)
+  #include <CGAL/Delaunay_triangulation_cell_base_3.h>
+#endif
+
 using namespace MVS;
 
 
@@ -267,7 +271,14 @@ struct cell_info_t {
 };
 
 typedef CGAL::Triangulation_vertex_base_with_info_3<vert_info_t, kernel_t> vertex_base_t;
-typedef CGAL::Triangulation_cell_base_with_info_3<cell_size_t, kernel_t> cell_base_t;
+
+#if defined(__arm__) || defined(__ARMEL__)
+  typedef CGAL::Delaunay_triangulation_cell_base_3<kernel_t> triangulation_cell_t;
+  typedef CGAL::Triangulation_cell_base_with_info_3<cell_size_t, kernel_t, triangulation_cell_t> cell_base_t;
+#else
+  typedef CGAL::Triangulation_cell_base_with_info_3<cell_size_t, kernel_t> cell_base_t;
+#endif
+
 typedef CGAL::Triangulation_data_structure_3<vertex_base_t, cell_base_t> triangulation_data_structure_t;
 typedef CGAL::Delaunay_triangulation_3<kernel_t, triangulation_data_structure_t, CGAL::Compact_location> delaunay_t;
 typedef delaunay_t::Vertex_handle vertex_handle_t;
@@ -335,7 +346,9 @@ inline Plane getFacetPlane(const facet_t& facet)
 // return orientation type
 #ifdef __GNUC__
 #pragma GCC push_options
-#pragma GCC target ("no-fma")
+	#if !(defined(__arm__)  && defined(__ARMEL__))
+		#pragma GCC target ("no-fma")
+	#endif
 #endif
 static inline int orientation(const point_t& a, const point_t& b, const point_t& c, const point_t& p)
 {

@@ -273,7 +273,11 @@ bool Load<TYPE>(ArchiveLoad& a, TYPE& v) { \
 
 // Serialization support for basic types
 ARCHIVE_DEFINE_TYPE(uint32_t)
+#if defined(__arm__) || defined(__ARMEL__)
+ARCHIVE_DEFINE_TYPE(uint64_t)
+#else
 ARCHIVE_DEFINE_TYPE(size_t)
+#endif
 ARCHIVE_DEFINE_TYPE(float)
 ARCHIVE_DEFINE_TYPE(double)
 

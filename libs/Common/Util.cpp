@@ -460,11 +460,15 @@ inline void CPUID(int CPUInfo[4], int level) {
 	__cpuid(CPUInfo, level);
 }
 #else
-#include <cpuid.h>
-inline void CPUID(int CPUInfo[4], int level) {
+  #if !(defined(__arm__) || defined(__ARMEL__))
+  #include <cpuid.h>
+  #endif
+  inline void CPUID(int CPUInfo[4], int level) {
+	#if !(defined(__arm__) || defined(__ARMEL__))
 	unsigned* p((unsigned*)CPUInfo);
 	__get_cpuid((unsigned&)level, p+0, p+1, p+2, p+3);
-}
+	#endif
+  }
 #endif
 
 /**
@@ -554,6 +558,9 @@ bool OSSupportsSSE()
 // Function to detect AVX availability in operating system.
 bool OSSupportsAVX()
 {
+ #if defined(__arm__) || defined(__ARMEL__)
+    return false;
+ #else
 	#ifndef _WIN64
 	// try AVX instruction
 	UINT flag;
@@ -577,6 +584,7 @@ bool OSSupportsAVX()
 	unsigned long long xcrFeatureMask(_xgetbv(_XCR_XFEATURE_ENABLED_MASK));
 	return (xcrFeatureMask & 0x6) == 0x6;
 	#endif // _WIN64
+#endif
 }
 /*----------------------------------------------------------------*/
 
@@ -585,6 +593,9 @@ bool OSSupportsAVX()
 // Function to detect SSE availability in operating system.
 bool OSSupportsSSE()
 {
+ #if defined(__arm__) || defined(__ARMEL__)
+    return false;
+ #else
 	// try SSE instruction and look for crash
 	try {
 		asm("xorps %xmm0, %xmm0");
@@ -593,16 +604,21 @@ bool OSSupportsSSE()
 		return false;     // unknown exception occurred
 	}
 	return true;
+ #endif
 }
 // Function to detect AVX availability in operating system.
 bool OSSupportsAVX()
 {
+ #if defined(__arm__) || defined(__ARMEL__)
+    return false;
+ #else
 	// check if the OS will save the YMM registers
 	unsigned int index(0); //specify 0 for XFEATURE_ENABLED_MASK register
 	unsigned int eax, edx;
 	__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
 	unsigned long long xcrFeatureMask(((unsigned long long)edx << 32) | eax);
 	return (xcrFeatureMask & 0x6) == 0x6;
+ #endif
 }
 /*----------------------------------------------------------------*/
 #endif // _MSC_VER
